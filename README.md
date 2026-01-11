@@ -1,4 +1,5 @@
 # Arc Characteristics Model for TIG Welding
+
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/mateotournoud/acm4tw.git/main?urlpath=%2Fdoc%2Ftree%2FArc+Characteristics+Model+for+TIG+Welding.ipynb)
 
 *By Mateo Tournoud.*
