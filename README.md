@@ -6,4 +6,4 @@ This Jupyter Notebook offers the possibility to simulate various plasma properti
 
 This Jupyter Notebook and its modules do not need to be downloaded or installed. By clicking the Launch Binder button, the notebook is run in a virtual environment, facilitating the process and ensuring reproducibility.
 
-All steps are implemented using the acm4tw module, written in Python 3.11.9. A brief explanation of the algorithms used, their limitations, and the interpretation of the results is provided in each section. All equations and coefficients used in the model are taken from [1].
+All steps are implemented using the acm4tw module, written in Python 3.11.9. A brief explanation of the algorithms used, their limitations, and the interpretation of the results is provided in each section. All equations and coefficients used in the model are taken from Delgado-Álvarez et al. (2021).
