@@ -1,0 +1,4 @@
+gas,conductivity_S/m,temperature_K,specificheat_J/kg/K,viscosity_kg/m/s,thermalconductivity_W/m/K,prandtlnr
+ar,2850,10000,1480,2.63e-04,0.6655,0.5863
+he,2850,14850,14000,3.71e-04,4.33,1.1995
+ar/he,2850,10500,2761,2.84e-04,1.2653,0.6196
