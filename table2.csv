@@ -1,0 +1,6 @@
+gas,equation,range,R**2 ,a,b,c,d,e,f,g,h,i,j
+"ar","T_over_Tmaxo_Ar","['R/Ra',0.0,1.5]",0.996,1.007,-1.345,1.101,1.147,-2.939,2.231,-0.839,0.168,-0.017,6.5e-04
+"ar","local_max_at_Z__T_Ar1","['Z/L',0,0.3]",0.975,0.553,0.451,0.157,19.032,67.229,84.301,37.0,None,None,None
+"ar","local_max_at_Z__T_Ar2","['Z/L',0.3,inf]",0.981,1.205e+05,4.211e+04,1.163e+03,1.324e+05,10.138,1.153e+05,0.035,3.583e+04,None,None
+"all","S_over_Smax",None,0.981,0.222,-0.211,-0.039,0.887,0.346,None,None,None,None,None
+"ar","interaction_max__S",None,0.975,-39.160,0.823,-5.679e+03,None,None,None,None,None,None,None

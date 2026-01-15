@@ -36,6 +36,27 @@ def local_max_at_Z(I, L, Z, PQ_max, a, b, c, d, e, f):
     base = base**f
     return base
 
+def local_max_at_Z_Ar1(L, Z, PQ_max, Rc, a, b, c, d, e, f, g):
+    """
+    Eq. (7) (Delgado-Álvarez et. al., 2019).
+    Calculation of the local maxima for Argon gas (Z/L < 0.3).
+    """
+    x = Z/(Rc*L)**0.5
+    return PQ_max * (a+b*x**0.5-c*x+d*x**1.5-e*x**2+f*x**2.5-g*x**3)
+
+def local_max_at_Z_Ar2(I, L, Z, Rc, a, b, c, d, e, f, g, h):
+    """
+    Eq. (8) (Delgado-Álvarez et. al., 2019).
+    Calculation of the local maxima for Argon gas (Z/L ≥ 0.3).
+    """
+    if Z == 0:
+        Z = 1e-10  # Avoid log(0)
+    if Z == L:
+        Z = L * 0.9999  # Avoid log(1)=0
+    x = np.log(Z/L)
+    arg = a + b*x + c*x**-1 + d*x**2 + e*x**-2 + f*x**3 + g*x**-3 + h*x**4
+    return Rc**0.5 * I**0.1 * L**-0.2 * arg
+
 # ---------- Dimensionless radial coordinates for arc-column profiles ----------
 def rhat(R, Ra, Pr, p):
     """
@@ -63,6 +84,10 @@ def T_over_Tmaxo(x, a, b, c, d, e, f, g):
     Use the exact functional form and coefficients you extracted from Table 5【2-58】【2-60】.
     """
     return a + b*x + c*x**2 + d*x**3 + e*x**4 + f*x**5 + g*x**6
+
+def T_over_Tmaxo_Ar(R, Ra, a, b, c, d, e, f, g, h, i, j):
+    x = R / Ra
+    return a + b*x**2 + c*x**4 + d*x**6 + e*x**8 + f*x**10 + g*x**12 + h*x**14 + i*x**16 + j*x**18
 
 def Vz_over_Vmaxo(x, a, b, c, d, e):
     """

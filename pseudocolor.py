@@ -52,38 +52,13 @@ def _stack_field(arc_df, col: str, R: np.ndarray) -> np.ndarray:
         profiles.append(v)
     return np.stack(profiles, axis=0)
 
-def _stack_field_with_x(arc_df, field_col: str, x_col: str):
-    """
-    Stack a dataframe column of 1D profiles into a 2D array (NZ x NX)
-    and also return the corresponding X coordinates (NZ x NX).
-    """
-    profiles = []
-    xcoords = []
-
-    for i, (cell_f, cell_x) in enumerate(
-        zip(arc_df[field_col].values, arc_df[x_col].values)
-    ):
-        v = _as_1d_float_vector(cell_f)
-        x = _as_1d_float_vector(cell_x)
-
-        if v.size != x.size:
-            raise ValueError(
-                f"Row {i}: field '{field_col}' has length {v.size} "
-                f"but '{x_col}' has length {x.size}."
-            )
-
-        profiles.append(v)
-        xcoords.append(x)
-
-    return np.stack(xcoords, axis=0), np.stack(profiles, axis=0)
 
 def plot_arccolumn_isolines(
     arc_df,
     Zcoord: np.ndarray,
-    R: np.ndarray,
     Ra: np.ndarray,
-    cmap: str = "viridis",
-):
+    Tmax_glob : float = 25000.0,
+    cmap: str = "viridis"):
     """
     Heatmaps for magnetic field (Bθ), temperature (T), and axial velocity (Vz)
     over the (R, Z) plane.
@@ -93,6 +68,7 @@ def plot_arccolumn_isolines(
     2. Temperature: vmin=300 K, vmax=max available
     3. Velocity: vmin=0 m/s, vmax=max available
     """
+    R = np.linspace(0, 0.01, 201)
     R = np.asarray(R).ravel()
     Zcoord = np.asarray(Zcoord).ravel()
 
@@ -104,20 +80,9 @@ def plot_arccolumn_isolines(
     F_T = _stack_field(arc_df, col_T, R)
     F_V = _stack_field(arc_df, col_V, R)
 
-    # col_B = _pick_column(arc_df, ["Bθ", "Btheta", "B_th", "B"])
-    # col_T = _pick_column(arc_df, ["T", "Temp", "Temperature"])
-    # col_V = _pick_column(arc_df, ["Vz", "V_z", "V", "velocity"])
-
-    # X_B, F_B = _stack_field_with_x(arc_df, col_B, "Xcoord1")
-    # X_T, F_T = _stack_field_with_x(arc_df, col_T, "Xcoord2")
-    # X_V, F_V = _stack_field_with_x(arc_df, col_V, "Xcoord2")
-
     if F_B.shape[0] != Zcoord.size:
         raise ValueError(f"len(Zcoord)={Zcoord.size} does not match number of profiles NZ={F_B.shape[0]}")
 
-    # Z2d_B = np.repeat(Zcoord[:, None], X_B.shape[1], axis=1)
-    # Z2d_T = np.repeat(Zcoord[:, None], X_T.shape[1], axis=1)
-    # Z2d_V = np.repeat(Zcoord[:, None], X_V.shape[1], axis=1)
     R2d, Z2d = np.meshgrid(R, Zcoord)
 
     # --- Magnetic field ---
@@ -125,8 +90,7 @@ def plot_arccolumn_isolines(
     pcm1 = ax1.pcolormesh(
         R2d, Z2d, F_B, shading="auto",
         vmin=float(np.nanmin(F_B)), vmax=float(np.nanmax(F_B)),
-        cmap=cmap
-    )
+        cmap=cmap)
     ax1.plot(Ra, Zcoord, color="red", linewidth=1.5, label="Arc shape")
     ax1.scatter(Ra, Zcoord, s=12, color="red")
     ax1.set_title("Magnetic field Bθ (T)")
@@ -141,9 +105,8 @@ def plot_arccolumn_isolines(
     fig2, ax2 = plt.subplots()
     pcm2 = ax2.pcolormesh(
         R2d, Z2d, F_T, shading="auto",
-        vmin=5000.0, vmax=float(np.nanmax(F_T)),
-        cmap=cmap
-    )
+        vmin=10000.0, vmax=float(np.nanmax(F_T)),
+        cmap=cmap)
     ax2.plot(Ra, Zcoord, color="red", linewidth=1.5, label="Arc shape")
     ax2.scatter(Ra, Zcoord, s=12, color="red")
     ax2.set_title("Temperature T (K)")
@@ -159,8 +122,7 @@ def plot_arccolumn_isolines(
     pcm3 = ax3.pcolormesh(
         R2d, Z2d, F_V, shading="auto",
         vmin=0.0, vmax=float(np.nanmax(F_V)),
-        cmap=cmap
-    )
+        cmap=cmap)
     ax3.plot(Ra, Zcoord, color="red", linewidth=1.5, label="Arc shape")
     ax3.scatter(Ra, Zcoord, s=12, color="red")
     ax3.set_title("Axial velocity Vz (m/s)")
