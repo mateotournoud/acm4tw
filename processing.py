@@ -107,7 +107,7 @@ def arc_weld_pool_interactions(current, arclength, gas_name, Pr_number, Ra, tabl
     import acm4tw
 
     Ra_at_L = Ra[-1:]
-    R = np.linspace(1e-10, 0.015, 101)
+    R = np.linspace(1e-10, 0.03, 201)
     gascomp = {"Argon": "ar", "Helium":"he", "Argon/Helium":"ar/he"}
     interactions = {}
 
