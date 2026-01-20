@@ -104,7 +104,7 @@ def _plot_profile(x, y, Ra, arclength, pr_number, pr_exp, xlabel, ylabel, xlim, 
     Racoord = (Ra_at_L**0.5)/(arclength**0.5)*pr_number**pr_exp
     fig, ax = plt.subplots(figsize=(8, 4.8))
     ax.plot(x, y, linewidth=2, color="blue", label= "Interaction profile")
-    # ax.vlines(Racoord, ylim[0], ylim[1], linewidth=2, color='red', label= r"R = $R_a$")
+    ax.vlines(Racoord, ylim[0], ylim[1], linewidth=2, color='red', label= r"R = $R_a$")
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_xlim(xlim[0], xlim[1])
