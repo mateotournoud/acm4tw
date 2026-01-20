@@ -1,4 +1,4 @@
-def arc_column_characteristics(current, arclength, gas_name, Pr_number, Zcoord, Ra, Rc, table2, table5, valid_range):
+def arc_column_characteristics(current, arclength, gas_name, Pr_number, Zcoord, Ra, Rc, table2, table5, valid_arc_shape, valid_range):
     import pandas as pd
     import numpy as np
     import acm4tw
@@ -10,6 +10,10 @@ def arc_column_characteristics(current, arclength, gas_name, Pr_number, Zcoord, 
                     "T/Tmax°", "T", "Tmax°", "Vz/Vmax°", "Vz", "Vmax°"]
     arc_column = pd.DataFrame(columns = columnames)
     arc_column["Zcoord"] = Zcoord
+
+    if valid_arc_shape:
+        Ra_filtered = Zcoord*(-1)/Rc
+        mask = (Ra_filtered < 0.5) | (Ra_filtered > 5.0)
 
     # Magnetic field (2x)
     row21 = table5.loc[table5["equation"] == "Btheta_over_Bmaxo"].iloc[0]
@@ -60,7 +64,9 @@ def arc_column_characteristics(current, arclength, gas_name, Pr_number, Zcoord, 
         # magnetic field
         xcoord_Btheta = acm4tw.rhat(R1, Ra_i, Pr_number, p=-0.5)
         Btheta_norm = acm4tw.Btheta_over_Bmaxo(xcoord_Btheta, a21, b21, c21, d21, e21)
-        if (abs(Zi)/arclength < 0.4 or abs(Zi)/arclength > 0.8) and valid_range:
+        if valid_arc_shape and mask[i]:
+            Btheta_maxlocal = 0.0
+        elif (abs(Zi)/arclength < 0.4 or abs(Zi)/arclength > 0.8) and valid_range:
             Btheta_maxlocal = 0.0
         else:
             Btheta_maxlocal = acm4tw.local_max_at_Z(current, arclength, abs(Zi), Bmax_glob, a23, b23, c23, d23, e23, f23)
@@ -69,7 +75,9 @@ def arc_column_characteristics(current, arclength, gas_name, Pr_number, Zcoord, 
         xcoord_Temp_Axv = acm4tw.rhat(R1, Ra_i, Pr_number, p=-1.0)
         if gas_name == "Argon":
             Temp_norm = acm4tw.T_over_Tmaxo_Ar(R1, Ra_i, a31, b31, c31, d31, e31, f31, g31, h31, i31, j31)
-            if abs(Zi)/arclength < 0.3:
+            if valid_arc_shape and mask[i]:
+                T_maxlocal = 0.0
+            elif abs(Zi)/arclength < 0.3:
                 T_maxlocal = acm4tw.local_max_at_Z_Ar1(arclength, abs(Zi), Tmax_glob, Rc, a331, b331, c331, d331, e331, f331, g331)
             else:
                 T_maxlocal = acm4tw.local_max_at_Z_Ar2(current, arclength, abs(Zi), Rc, a332, b332, c332, d332, e332, f332, g332, h332)
@@ -84,7 +92,9 @@ def arc_column_characteristics(current, arclength, gas_name, Pr_number, Zcoord, 
         
         # axial velocity
         Vz_norm = acm4tw.Vz_over_Vmaxo(xcoord_Temp_Axv, a41, b41, c41, d41, e41)
-        if (abs(Zi)/arclength < 0.4 or abs(Zi)/arclength > 0.8) and valid_range:
+        if valid_arc_shape and mask[i]:
+            Vz_maxlocal = 0.0
+        elif (abs(Zi)/arclength < 0.4 or abs(Zi)/arclength > 0.8) and valid_range:
             Vz_maxlocal = 0.0
         else:
             Vz_maxlocal = acm4tw.local_max_at_Z(current, arclength, abs(Zi), Vmax_glob, a43, b43, c43, d43, e43, f43)
