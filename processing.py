@@ -83,7 +83,9 @@ def arc_column_characteristics(current, arclength, gas_name, Pr_number, Zcoord, 
                 T_maxlocal = acm4tw.local_max_at_Z_Ar2(current, arclength, abs(Zi), Rc, a332, b332, c332, d332, e332, f332, g332, h332)
         else:
             Temp_norm = acm4tw.T_over_Tmaxo(xcoord_Temp_Axv, a31, b31, c31, d31, e31, f31, g31)
-            if (abs(Zi)/arclength < 0.3 or abs(Zi)/arclength > 0.8) and valid_range:
+            if valid_arc_shape and mask[i]:
+                T_maxlocal = 0.0
+            elif (abs(Zi)/arclength < 0.3 or abs(Zi)/arclength > 0.8) and valid_range:
                 T_maxlocal = 0.0
             else:
                 T_maxlocal = acm4tw.local_max_at_Z(current, arclength, abs(Zi), Tmax_glob, a33, b33, c33, d33, e33, f33)
