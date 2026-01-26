@@ -1,0 +1,203 @@
+import pandas as pd
+import numpy as np
+import acm4tw
+import plotlib
+import pseudocolor
+
+# Parameters
+table2 = pd.read_csv('table2.csv', sep=',')
+table4 = pd.read_csv('table4.csv', sep=',')
+table5 = pd.read_csv('table5.csv', sep=',')
+
+# Boundary Conditions
+gas_name = "Argon/Helium"
+current = 300 # A
+arclength = 8 # mm, absolute length
+arclength = arclength/1000 # convert to m and place the 0 at the cathode
+gascomp = {"Argon": "ar", "Helium":"he", "Argon/Helium":"ar/he", "Ar": "ar"}
+Pr_number = table4.loc[table4["gas"] == gascomp[gas_name], "prandtlnr"].iloc[0]
+Zcoord = np.linspace(0,-arclength,201)
+valid_arc_shape = False
+valid_arc_column = False
+filename = 'arc_column_arhe300.csv'
+
+# Calculate Rc
+Rc = acm4tw.Rc_from_I(current)
+print(f"Rc = {(Rc*1000):.4f} mm")
+
+# Calculate Ra (1x)
+row11 = table5.loc[table5["equation"] == "Ra_from_Z"].iloc[0]
+a11, b11 = row11["a"], row11["b"]
+Ra = acm4tw.Ra_from_Z(Zcoord,Rc,Pr_number,a11,b11)
+if valid_arc_shape:
+    Ra_filtered = Zcoord*(-1)/Rc
+    mask = (Ra_filtered < 0.5) | (Ra_filtered > 5.0)
+    Ra_filtered = np.where(mask, np.nan, Ra)
+else:
+    Ra_filtered = Ra
+
+plotlib.shape_of_the_arc(Ra_filtered,Zcoord,Rc,arclength,gas_name,current)
+plotlib.normalized_shape_of_the_arc(Ra_filtered, Zcoord, Pr_number, Rc, gas_name, current, arclength)
+
+# ------- Arc column characteristics -------
+R1 = np.linspace(0, 0.01, 201)
+columnames = ["Zcoord", "Xcoord1", "Xcoord2", "Bθ/Bmax°", "Bθ", "Bmax°",
+                "T/Tmax°", "T", "Tmax°", "Vz/Vmax°", "Vz", "Vmax°"]
+arc_column = pd.DataFrame(columns = columnames)
+arc_column["Zcoord"] = Zcoord
+
+# Magnetic field (2x)
+row21 = table5.loc[table5["equation"] == "Btheta_over_Bmaxo"].iloc[0]
+a21, b21, c21, d21, e21 = row21["a"], row21["b"], row21["c"], row21["d"], row21["e"]
+row22 = table5.loc[(table5["equation"] == "global_max__B") & (table5["gas"] == gascomp[gas_name])].iloc[0]
+a22, b22, c22 = row22["a"], row22["b"], row22["c"]
+Bmax_glob = acm4tw.global_max(current, arclength, a22, b22, c22)
+print(f"Global Maximum Magnetic Flux Density: Bmax = {Bmax_glob} T")
+
+# Temperature (3x)
+if gas_name == "Argon":
+    row31 = table2.loc[table2["equation"] == "T_over_Tmaxo_Ar"].iloc[0]
+    a31, b31, c31, d31, e31, f31, g31, h31, i31, j31 = row31["a"], row31["b"], row31["c"], row31["d"], row31["e"], row31["f"], row31["g"], row31["h"], row31["i"], row31["j"]
+else:
+    row31 = table5.loc[table5["equation"] == "T_over_Tmaxo"].iloc[0]
+    a31, b31, c31, d31, e31, f31, g31 = row31["a"], row31["b"], row31["c"], row31["d"], row31["e"], row31["f"], row31["g"]
+row32 = table5.loc[(table5["equation"] == "global_max__T") & (table5["gas"] == gascomp[gas_name])].iloc[0]
+a32, b32, c32 = row32["a"], row32["b"], row32["c"]
+Tmax_glob = acm4tw.global_max(current, arclength, a32, b32, c32)
+print(f"Global Maximum Temperature: Tmax = {Tmax_glob:.3f} K")
+
+# Axial arc velocity (4x)
+row41 = table5.loc[table5["equation"] == "Vz_over_Vmaxo"].iloc[0]
+a41, b41, c41, d41, e41 = row41["a"], row41["b"], row41["c"], row41["d"], row41["e"]
+row42 = table5.loc[(table5["equation"] == "global_max__V") & (table5["gas"] == gascomp[gas_name])].iloc[0]
+a42, b42, c42 = row42["a"], row42["b"], row42["c"]
+Vmax_glob = acm4tw.global_max(current, arclength, a42, b42, c42)
+print(f"Global Maximum Axial Arc Velocity: Vmax = {Vmax_glob} m/s")
+
+row23 = table5.loc[(table5["equation"] == "local_max_at_Z__B") & (table5["gas"] == gascomp[gas_name])].iloc[0]
+a23, b23, c23, d23, e23, f23 = row23["a"], row23["b"], row23["c"], row23["d"], row23["e"], row23["f"]
+row43 = table5.loc[(table5["equation"] == "local_max_at_Z__V") & (table5["gas"] == gascomp[gas_name])].iloc[0]
+a43, b43, c43, d43, e43, f43 = row43["a"], row43["b"], row43["c"], row43["d"], row43["e"], row43["f"]
+if gas_name == "Argon":
+    row331 = table2.loc[(table2["equation"] == "local_max_at_Z__T_Ar1") & (table2["gas"] == gascomp[gas_name])].iloc[0]
+    row332 = table2.loc[(table2["equation"] == "local_max_at_Z__T_Ar2") & (table2["gas"] == gascomp[gas_name])].iloc[0]
+    a331, b331, c331, d331, e331, f331, g331 = row331["a"], row331["b"], row331["c"], row331["d"], row331["e"], row331["f"], row331["g"]
+    a332, b332, c332, d332, e332, f332, g332, h332 = row332["a"], row332["b"], row332["c"], row332["d"], row332["e"], row332["f"], row332["g"], row332["h"]
+else:
+    row33 = table5.loc[(table5["equation"] == "local_max_at_Z__T") & (table5["gas"] == gascomp[gas_name])].iloc[0]
+    a33, b33, c33, d33, e33, f33 = row33["a"], row33["b"], row33["c"], row33["d"], row33["e"], row33["f"]
+
+for i, Zi in enumerate(Zcoord):
+    Ra_i = Ra[i]
+
+    # magnetic field
+    xcoord_Btheta = acm4tw.rhat(R1, Ra_i, Pr_number, p=-0.5)
+    Btheta_norm = acm4tw.Btheta_over_Bmaxo(xcoord_Btheta, a21, b21, c21, d21, e21)
+    if valid_arc_shape and mask[i]:
+        Btheta_maxlocal = 0.0
+    elif (abs(Zi)/arclength < 0.4 or abs(Zi)/arclength > 0.8) and valid_arc_column:
+        Btheta_maxlocal = 0.0
+    else:
+        Btheta_maxlocal = acm4tw.local_max_at_Z(current, arclength, abs(Zi), Bmax_glob, a23, b23, c23, d23, e23, f23)
+    
+    # temperature
+    xcoord_Temp_Axv = acm4tw.rhat(R1, Ra_i, Pr_number, p=-1.0)
+    if gas_name == "Argon":
+        Temp_norm = acm4tw.T_over_Tmaxo_Ar(R1, Ra_i, a31, b31, c31, d31, e31, f31, g31, h31, i31, j31)
+        if valid_arc_shape and mask[i]:
+            T_maxlocal = 0.0
+        elif abs(Zi)/arclength < 0.3:
+            T_maxlocal = acm4tw.local_max_at_Z_Ar1(arclength, abs(Zi), Tmax_glob, Rc, a331, b331, c331, d331, e331, f331, g331)
+        else:
+            T_maxlocal = acm4tw.local_max_at_Z_Ar2(current, arclength, abs(Zi), Rc, a332, b332, c332, d332, e332, f332, g332, h332)
+    else:
+        Temp_norm = acm4tw.T_over_Tmaxo(xcoord_Temp_Axv, a31, b31, c31, d31, e31, f31, g31)
+        if valid_arc_shape and mask[i]:
+            T_maxlocal = 0.0
+        elif (abs(Zi)/arclength < 0.3 or abs(Zi)/arclength > 0.8) and valid_arc_column:
+            T_maxlocal = 0.0
+        else:
+            T_maxlocal = acm4tw.local_max_at_Z(current, arclength, abs(Zi), Tmax_glob, a33, b33, c33, d33, e33, f33)
+    Temp_norm[Temp_norm < 0] = 0
+    Temp_norm[Temp_norm > 1.1] = 0
+    
+    # axial velocity
+    Vz_norm = acm4tw.Vz_over_Vmaxo(xcoord_Temp_Axv, a41, b41, c41, d41, e41)
+    if valid_arc_shape and mask[i]:
+        Vz_maxlocal = 0.0
+    elif (abs(Zi)/arclength < 0.4 or abs(Zi)/arclength > 0.8) and valid_arc_column:
+        Vz_maxlocal = 0.0
+    else:
+        Vz_maxlocal = acm4tw.local_max_at_Z(current, arclength, abs(Zi), Vmax_glob, a43, b43, c43, d43, e43, f43)
+
+    arc_column.at[i, "Xcoord1" ] = xcoord_Btheta
+    arc_column.at[i, "Xcoord2" ] = xcoord_Temp_Axv
+    arc_column.at[i, "Bθ/Bmax°"] = Btheta_norm
+    arc_column.at[i, "T/Tmax°" ] = Temp_norm
+    arc_column.at[i, "Vz/Vmax°"] = Vz_norm
+    arc_column.at[i, "Bmax°"] = Btheta_maxlocal
+    arc_column.at[i, "Tmax°"] = T_maxlocal
+    arc_column.at[i, "Vmax°"] = Vz_maxlocal
+    arc_column.at[i, "Bθ"] = Btheta_norm * Btheta_maxlocal
+    arc_column.at[i, "T" ] = Temp_norm * T_maxlocal
+    arc_column.at[i, "Vz"] = Vz_norm * Vz_maxlocal
+arc_column.to_csv(filename, index=False)
+pseudocolor.plot_arccolumn_isolines(arc_column, Zcoord, Ra_filtered)
+plotlib.plot_normalized_profiles(arc_column, Pr_number, gas_name)
+
+# ------- Arc-weld-pool interactions -------
+Ra_at_L = Ra[-1:]
+R2 = np.linspace(1e-10, 0.03, 201)
+if Ra_at_L/Rc > 5.0:
+    print("Warning: Ra/L > 5.0; all the arc - weld-pool interactions are calculated with a non-valid Ra.")
+
+# Heat flux (5x)
+row51 = table5.loc[table5["equation"] == "q_over_qmax"].iloc[0]
+a51, b51, c51, d51, e51, f51, g51 = row51["a"], row51["b"], row51["c"], row51["d"], row51["e"], row51["f"], row51["g"]
+row52 = table5.loc[(table5["equation"] == "interaction_max__q") & (table5["gas"] == gascomp[gas_name])].iloc[0]
+a52, b52, c52 = row52["a"], row52["b"], row52["c"]
+xi_q = acm4tw.xi_qJP(R2, Ra_at_L, arclength, Pr_number, p=0.2)
+q_norm = acm4tw.q_over_qmax(xi_q, a51, b51, c51, d51, e51, f51, g51)
+q_max = acm4tw.interaction_max(current, arclength, a52, b52, c52)
+q_profile = q_norm * q_max
+# print(f"q_norm = {q_norm}")
+plotlib.plot_heat(xi_q, q_norm, Ra, arclength, Pr_number, gas_name)
+
+# Current Density (6x)
+row61 = table5.loc[table5["equation"] == "J_over_Jmax"].iloc[0]
+a61, b61, c61, d61, e61, f61, g61, h61 = row61["a"], row61["b"], row61["c"], row61["d"], row61["e"], row61["f"], row61["g"], row61["h"]
+row62 = table5.loc[(table5["equation"] == "interaction_max__J") & (table5["gas"] == gascomp[gas_name])].iloc[0]
+a62, b62, c62 = row62["a"], row62["b"], row62["c"]
+xi_J = acm4tw.xi_qJP(R2, Ra_at_L, arclength, Pr_number, p=0.3)
+J_norm = acm4tw.J_over_Jmax(xi_J, a61, b61, c61, d61, e61, f61, g61, h61)
+J_max = acm4tw.interaction_max(current, arclength, a62, b62, c62)
+J_profile = J_norm * J_max
+# print(f"J_norm = {J_norm}")
+plotlib.plot_current(xi_J, J_norm, Ra, arclength, Pr_number, gas_name)
+
+# Pressure (7x)
+row71 = table5.loc[table5["equation"] == "P_over_Pmax"].iloc[0]
+a71, b71, c71, d71, e71, f71, g71 = row71["a"], row71["b"], row71["c"], row71["d"], row71["e"], row71["f"], row71["g"]
+row72 = table5.loc[(table5["equation"] == "interaction_max__P") & (table5["gas"] == gascomp[gas_name])].iloc[0]
+a72, b72, c72 = row72["a"], row72["b"], row72["c"]
+xi_P = acm4tw.xi_qJP(R2, Ra_at_L, arclength, Pr_number, p=0.8)
+P_norm = acm4tw.P_over_Pmax(xi_P, a71, b71, c71, d71, e71, f71, g71)
+P_max = acm4tw.interaction_max(current, arclength, a72, b72, c72)
+P_profile = P_norm * P_max
+# print(f"P_norm = {P_norm}")
+plotlib.plot_pressure(xi_P, P_norm, Ra, arclength, Pr_number, gas_name)
+
+# Shear stress (8x)
+if gas_name == "Argon":
+    row81 = table2.loc[table2["equation"] == "S_over_Smax"].iloc[0]
+    a81, b81, c81, d81, e81 = row81["a"], row81["b"], row81["c"], row81["d"], row81["e"]
+    row82 = table2.loc[(table2["equation"] == "interaction_max__S") & (table2["gas"] == gascomp[gas_name])].iloc[0]
+    a82, b82, c82 = row82["a"], row82["b"], row82["c"]
+    xi_S = acm4tw.xi_S(R2, Ra_at_L, arclength)
+    S_norm = acm4tw.S_over_Smax(xi_S, a81, b81, c81, d81, e81)
+    S_max = acm4tw.shear_stress_max(current, arclength, a82, b82, c82)
+    S_profile = S_norm * S_max
+    # print(f"S_norm = {S_norm}")
+    plotlib.plot_shear(xi_S, S_norm, Ra, arclength, Pr_number, gas_name)
+
+

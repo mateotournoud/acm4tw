@@ -1,21 +1,40 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from typing import Dict, Optional, Sequence, Union
+from typing import Sequence, Union
 
 
 def _as_1d_float_vector(x: Union[str, Sequence[float], np.ndarray]) -> np.ndarray:
-    """Convert a cell value into a 1D float vector.
+    """
+    Convert heterogeneous input data into a one-dimensional NumPy float array.
 
-    Supports:
-    - list/tuple/np.ndarray of numbers
-    - strings like "[0.1 0.2 0.3]" or "[0.1, 0.2, 0.3]"
+    The function standardizes numerical data originating from CSV cells,
+    Pandas DataFrames, or in-memory objects. It supports direct numerical
+    containers as well as string-encoded vectors and guarantees a flattened
+    one-dimensional output suitable for numerical processing and plotting.
+
+    Parameters
+    ----------
+    x : str, Sequence[float], or np.ndarray
+        Input data representing a numerical vector. Supported formats include:
+        - NumPy arrays,
+        - Python lists or tuples,
+        - strings encoding numeric vectors, e.g. "[0.1 0.2 0.3]" or
+          "[0.1, 0.2, 0.3]".
+
+    Returns
+    -------
+    np.ndarray
+        One-dimensional NumPy array of floats.
+
+    Raises
+    ------
+    ValueError
+        If a string input cannot be parsed into a numeric vector.
     """
     if isinstance(x, np.ndarray):
         return np.asarray(x, dtype=float).ravel()
-
     if isinstance(x, (list, tuple)):
         return np.asarray(x, dtype=float).ravel()
-
     if isinstance(x, str):
         s = x.strip()
         if s.startswith("[") and s.endswith("]"):
@@ -25,11 +44,34 @@ def _as_1d_float_vector(x: Union[str, Sequence[float], np.ndarray]) -> np.ndarra
         if v.size == 0:
             raise ValueError(f"Could not parse numeric vector from string: {x[:80]}...")
         return v.ravel()
-
     return np.asarray(x, dtype=float).ravel()
 
-
 def _pick_column(arc_df, candidates: Sequence[str]) -> str:
+    """
+    Select the first available column from a list of candidate names.
+
+    The function iterates over a prioritized list of possible column names
+    and returns the name of the first one that exists in the given DataFrame.
+    This utility enables backward compatibility and flexible handling of
+    datasets with slightly different column naming conventions.
+
+    Parameters
+    ----------
+    arc_df : pandas.DataFrame
+        DataFrame from which a column name must be selected.
+    candidates : Sequence[str]
+        Ordered list of candidate column names, ranked by preference.
+
+    Returns
+    -------
+    str
+        Name of the first column found in the DataFrame.
+
+    Raises
+    ------
+    KeyError
+        If none of the candidate column names exist in the DataFrame.
+    """
     for c in candidates:
         if c in arc_df.columns:
             return c
@@ -40,7 +82,34 @@ def _pick_column(arc_df, candidates: Sequence[str]) -> str:
 
 
 def _stack_field(arc_df, col: str, R: np.ndarray) -> np.ndarray:
-    """Stack a dataframe column of 1D profiles into a 2D array (NZ x NR)."""
+    """
+    Assemble a two-dimensional field from a DataFrame column of radial profiles.
+
+    The function converts a column of one-dimensional radial profiles—stored as
+    heterogeneous cell values—into a two-dimensional NumPy array with dimensions
+    (N_Z × N_R), where N_Z is the number of axial positions and N_R the number of
+    radial points. Strict consistency between the radial grid and profile lengths
+    is enforced.
+
+    Parameters
+    ----------
+    arc_df : pandas.DataFrame
+        DataFrame containing radial profile data for multiple axial positions.
+    col : str
+        Name of the column holding the radial profiles.
+    R : np.ndarray
+        Radial coordinate array defining the expected profile length.
+
+    Returns
+    -------
+    np.ndarray
+        Two-dimensional array of shape (N_Z, N_R) containing stacked profiles.
+
+    Raises
+    ------
+    ValueError
+        If any profile length does not match the length of the radial grid.
+    """
     R = np.asarray(R).ravel()
     profiles = []
     for i, cell in enumerate(arc_df[col].values):
@@ -57,16 +126,39 @@ def plot_arccolumn_isolines(
     arc_df,
     Zcoord: np.ndarray,
     Ra: np.ndarray,
-    Tmax_glob : float = 25000.0,
     cmap: str = "viridis"):
     """
-    Heatmaps for magnetic field (Bθ), temperature (T), and axial velocity (Vz)
-    over the (R, Z) plane.
+    Plot two-dimensional isoline (heatmap) representations of arc column
+    physical fields in the (R, Z) plane.
 
-    Boundaries (color scaling):
-    1. Magnetic field: full range (vmin=min, vmax=max)
-    2. Temperature: vmin=300 K, vmax=max available
-    3. Velocity: vmin=0 m/s, vmax=max available
+    The function reconstructs 2D fields of azimuthal magnetic field (Bθ),
+    temperature (T), and axial velocity (Vz) from one-dimensional radial
+    profiles stored in a DataFrame. Each field is displayed as a color map
+    over the radial–axial domain, with the arc shape overlaid for reference.
+
+    Color scaling is applied as follows:
+        1. Magnetic field: full available data range,
+        2. Temperature: lower bound fixed to a reference plasma temperature,
+        3. Axial velocity: lower bound fixed to zero.
+
+    Parameters
+    ----------
+    arc_df : pandas.DataFrame
+        DataFrame containing arc column data. It must include columns for
+        magnetic field, temperature, and axial velocity, stored as radial
+        profiles for each axial position.
+    Zcoord : np.ndarray
+        Axial coordinate array corresponding to the rows of `arc_df`.
+    Ra : np.ndarray
+        Arc radius as a function of axial position, used to overlay the arc
+        shape on the heatmaps.
+    cmap : str, optional
+        Matplotlib colormap name used for all heatmaps (default is "viridis").
+
+    Returns
+    -------
+    None
+        The function generates and displays three Matplotlib figures.
     """
     R = np.linspace(0, 0.01, 201)
     R = np.asarray(R).ravel()
@@ -82,7 +174,6 @@ def plot_arccolumn_isolines(
 
     if F_B.shape[0] != Zcoord.size:
         raise ValueError(f"len(Zcoord)={Zcoord.size} does not match number of profiles NZ={F_B.shape[0]}")
-
     R2d, Z2d = np.meshgrid(R, Zcoord)
 
     # --- Magnetic field ---
