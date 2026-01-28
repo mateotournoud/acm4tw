@@ -169,14 +169,15 @@ def _plot_profile(x, y, Ra, arclength, pr_number, pr_exp, xlabel, ylabel, xlim, 
     """
     Ra_at_L = Ra[-1:]
     Racoord = (Ra_at_L**0.5)/(arclength**0.5)*pr_number**pr_exp
-    fig, ax = plt.subplots(figsize=(8, 4.8))
+    fig, ax = plt.subplots(figsize=(6, 4.8))
     ax.plot(x, y, linewidth=2, color="blue", label= "Interaction profile")
     ax.vlines(Racoord, ylim[0], ylim[1], linewidth=2, color='red', label= r"R = $R_a$")
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_xlim(xlim[0], xlim[1])
     ax.set_ylim(ylim[0], ylim[1])
-    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    ax.legend()
+    # ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     if title:
         ax.set_title(title)
         print(f"X coordinate of the {title}: {Racoord.item():.3f}")
@@ -184,7 +185,7 @@ def _plot_profile(x, y, Ra, arclength, pr_number, pr_exp, xlabel, ylabel, xlim, 
     fig.tight_layout()
     return
 
-def plot_heat(xi_q, q_norm, Ra, arclength, pr_number, gas_name, pr_exp=0.2):
+def plot_heat(xi_q, q_norm, Ra, arclength, pr_number, gas_name, pr_exp=-0.2):
     """
     Plot the normalized radial heat flux profile and indicate the arc radius
     position using Prandtl-number scaling.
@@ -220,12 +221,12 @@ def plot_heat(xi_q, q_norm, Ra, arclength, pr_number, gas_name, pr_exp=0.2):
     return _plot_profile(
         xi_q, q_norm, Ra, arclength, pr_number, pr_exp,
         xlim = [0,3], ylim = [0,1.2],
-        xlabel=r"$(R/\sqrt{R_a L})\,\mathrm{Pr}^{0.2}$",
+        xlabel=r"$(R/\sqrt{R_a L})\,\mathrm{Pr}^{-0.2}$",
         ylabel=r"$q/q_{\max}$",
         title=f"Heat flux profile for {gas_name}"
     )
 
-def plot_current(xi_J, J_norm, Ra, arclength, pr_number, gas_name, pr_exp=0.3):
+def plot_current(xi_J, J_norm, Ra, arclength, pr_number, gas_name, pr_exp=-0.3):
     """
     Plot the normalized radial current density profile and indicate the arc
     radius position using Prandtl-number scaling.
@@ -262,12 +263,12 @@ def plot_current(xi_J, J_norm, Ra, arclength, pr_number, gas_name, pr_exp=0.3):
     return _plot_profile(
         xi_J, J_norm, Ra, arclength, pr_number, pr_exp,
         xlim = [0,3], ylim = [0,1.2],
-        xlabel=r"$(R/\sqrt{R_a L})\,\mathrm{Pr}^{0.3}$",
+        xlabel=r"$(R/\sqrt{R_a L})\,\mathrm{Pr}^{-0.3}$",
         ylabel=r"$J/J_{\max}$",
         title=f"Current density profile for {gas_name}"
     )
 
-def plot_pressure(xi_P, P_norm, Ra, arclength, pr_number, gas_name, pr_exp=0.8):
+def plot_pressure(xi_P, P_norm, Ra, arclength, pr_number, gas_name, pr_exp=-0.8):
     """
     Plot the normalized radial arc pressure profile and indicate the arc radius
     position using Prandtl-number scaling.
@@ -303,7 +304,7 @@ def plot_pressure(xi_P, P_norm, Ra, arclength, pr_number, gas_name, pr_exp=0.8):
     return _plot_profile(
         xi_P, P_norm, Ra, arclength, pr_number, pr_exp,
         xlim = [0,2.5], ylim = [0,1.2],
-        xlabel=r"$(R/\sqrt{R_a L})\,\mathrm{Pr}^{0.8}$",
+        xlabel=r"$(R/\sqrt{R_a L})\,\mathrm{Pr}^{-0.8}$",
         ylabel=r"$P/P_{\max}$",
         title=f"Arc pressure profile for {gas_name}"
     )
